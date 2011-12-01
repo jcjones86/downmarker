@@ -1,0 +1,16 @@
+GEM
+  specs:
+    ansi (1.4.1)
+    minitest (2.8.1)
+    rdiscount (1.6.8)
+    turn (0.8.3)
+      ansi
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  ansi
+  minitest
+  rdiscount
+  turn
