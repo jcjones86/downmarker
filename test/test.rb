@@ -5,13 +5,19 @@ require "fileutils"
 require "test/unit"
 require "turn"
 
+class TestHelper
+  def self.output_test
+    FileUtils.rm_rf("test/output")
+    Dir.mkdir("test/output")
+    yield
+    FileUtils.rm_rf("test/output")
+  end
+end
 
-class TestDownmarker < Test::Unit::TestCase
-  
-  attr_accessor :dm
-  
+
+class TestBuilder < Test::Unit::TestCase  
   def setup
-    @dm = Downmarker::Builder.new
+    @builder ||= Downmarker::Builder.new
   end
   
   def output_test
@@ -20,25 +26,10 @@ class TestDownmarker < Test::Unit::TestCase
     yield
     FileUtils.rm_rf("test/output")
   end
-  
-  
-  def test_get_files
-    assert_equal(
-      ["a.md", "b.md", "nested/c.md", "nested/d.md"],
-      @dm.get_files("test/input", "md")
-    )
-  end
-  
-  def test_strip_root
-    assert_equal(
-      "nested/c.md",
-      @dm.strip_root("test/input/nested/c.md", "test/input")
-    )
-  end
-  
+
   def test_build_site
-    output_test do
-      @dm.build_site("test/input", "test/output")
+    TestHelper.output_test do
+      @builder.build_site("test/input", "test/output")
       
       in_files = Dir.glob("test/input/**/*.md")
       out_files = Dir.glob("test/output/**/*.html")
@@ -51,21 +42,42 @@ class TestDownmarker < Test::Unit::TestCase
     end
   end
   
-  def test_clone_dirs
-    output_test do
-      @dm.clone_dirs("test/input", "test/output")
-    end
-  end
-  
   def test_convert_file
-    output_test do
-      @dm.convert_file("test/input/a.md", "test/output/a.html")
+    TestHelper.output_test do
+      @builder.convert_file("test/input/a.md", "test/output/a.html")
       assert_match(/^<h2>/, IO.read("test/output/a.html"))
     end
   end
   
   def test_convert_string
-    assert_match(/^<h3>/, @dm.convert_string("### Blah ###"))
+    assert_match(/^<h3>/, @builder.convert_string("### Blah ###"))
+  end
+end
+
+
+class TestFileHandler < Test::Unit::TestCase
+  def setup
+    @file_handler ||= Downmarker::FileHandler.new
   end
   
+  def test_get_files
+    assert_equal(
+      ["a.md", "b.md", "nested/c.md", "nested/d.md"],
+      @file_handler.get_files("test/input", "md")
+    )
+  end
+  
+  def test_strip_root
+    assert_equal(
+      "nested/c.md",
+      @file_handler.strip_root("test/input/nested/c.md", "test/input")
+    )
+  end
+  
+  def test_clone_dirs
+    TestHelper.output_test do
+      @file_handler.clone_dirs("test/input", "test/output")
+    end
+  end  
 end
+
