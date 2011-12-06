@@ -11,10 +11,11 @@ class TestDownmarker < Test::Unit::TestCase
   attr_accessor :dm
   
   def setup
-    @dm = Downmarker.new
+    @dm = Downmarker::Builder.new
   end
   
   def output_test
+    FileUtils.rm_rf("test/output")
     Dir.mkdir("test/output")
     yield
     FileUtils.rm_rf("test/output")
@@ -38,10 +39,10 @@ class TestDownmarker < Test::Unit::TestCase
   def test_build_site
     output_test do
       @dm.build_site("test/input", "test/output")
-    
+      
       in_files = Dir.glob("test/input/**/*.md")
       out_files = Dir.glob("test/output/**/*.html")
-    
+      
       # Matching out file for each in file
       in_files.each do |in_file|
         sanitized = in_file.gsub(/input/, "output").gsub(/\.md$/, ".html")
