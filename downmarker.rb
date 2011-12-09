@@ -5,54 +5,61 @@ require "fileutils"
 module Downmarker
   MD_EXT = "md"
   
-  
   class Builder
-    def initialize
-      @file_handler = FileHandler.new
-    end
-    
-    def build_site(source, dest)
-      @file_handler.clone_dirs(source, dest)
+    def self.build_site(source, dest)
+      source_dir = Directory.new(source)
       
-      @file_handler.get_files(source, MD_EXT).each do |input_file|
+      source_dir.clone_to(dest)
+      source_dir.get_files(MD_EXT).each do |input_file|
         output_file = input_file.sub(/\.md$/, ".html")
-        convert_file("#{source}/#{input_file}", "#{dest}/#{output_file}")
+        Converter.convert_file(
+          File.join(source, input_file),
+          File.join(dest, output_file)
+        )
       end
-    end
-    
-    def convert_file(in_file, out_file)
-      input = IO.read(in_file)
-      converted = convert_string(input)
-      File.open(out_file, "w") do |f| f.write(converted) }
-    end
-    
-    def convert_string(str)
-      Markdown.new(str).to_html
     end
   end
   
   
-  class FileHandler
-    def get_files(root, ext)
-      Dir.glob(File.join(root, "**", "*.#{ext}")).map do |p|
-        strip_root(p, root)
+  class Converter
+    def self.convert_file(in_file, out_file)
+      input = IO.read(in_file)
+      converted = convert_string(input)
+      File.open(out_file, "w") { |f| f.write(converted) }
+    end
+    
+    def self.convert_string(input)
+      Markdown.new(input).to_html
+    end
+  end
+  
+  
+  class Directory
+    def initialize(path)
+      @path = path
+    end
+    
+    def clone_to(dest)
+      get_subdirs.each do |subdir|
+        FileUtils.mkdir_p(File.join(dest, subdir))
       end
     end
     
-    def get_directories(root)
-      get_files(root, MD_EXT).map { |file|
-        File.dirname(file)
-      }.uniq
+    def get_subdirs
+      subdirs = Dir.glob(File.join(@path, "**/*/")).select { |path|
+        File.directory?(path)
+      }
+      
+      subdirs.map { |d| strip_root(d) }.uniq
     end
     
-    def strip_root(path, root)
-      path[(root.length + 1)..-1]
+    def get_files(ext)
+      files = Dir.glob(File.join(@path, "**/*.#{ext}"))
+      files.map { |path| strip_root(path) }
     end
     
-    def clone_dirs(source, dest)
-      get_directories(source).each do |dir|
-        FileUtils.mkdir_p(File.join(dest, dir))
-      end
+    def strip_root(path)
+      path[(@path.length + 1)..-1]
     end
   end
 end
