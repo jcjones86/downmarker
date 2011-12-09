@@ -3,14 +3,12 @@ require "rdiscount"
 require "fileutils"
 
 module Downmarker
-  MD_EXT = "md"
-  
   class Builder
     def self.build_site(source, dest)
       source_dir = Directory.new(source)
       
       source_dir.clone_to(dest)
-      source_dir.get_files(MD_EXT).each do |input_file|
+      source_dir.get_files("md").each do |input_file|
         output_file = input_file.sub(/\.md$/, ".html")
         Converter.convert_file(
           File.join(source, input_file),
